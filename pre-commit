@@ -1,0 +1,14 @@
+#!/bin/sh
+
+set -e
+# set -x
+
+hooks=(pre_commit_no_commit_on_master pre_commit_rubocop)
+
+for hook in "${hooks[@]}"; do
+  path=".git/hooks/$hook"
+
+  if [[ -x "${path}" ]]; then
+    ${path}
+  fi
+done

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# set -x
+
+function modified_ruby_files() {
+  echo git status --porcelain |grep -E "^\s+(A|M|AM)\s+.*\.rb$"|cut -c 4-9999
+}
+
+COLOR='\033[0;33m'
+NC='\033[0m' # No Color
+function echo_with_color() {
+  msg=$1
+
+  printf "${COLOR}${msg}${NC}"
+}
+
+if [[ -f ".rubocop.yml" ]]
+then
+  bundle exec rubocop -F --no-color -c .rubocop.yml $(modified_ruby_files) >/dev/null
+
+  if [[ $? -ne 0 ]]; then
+    echo "Rubocop found offenses. Fix them with $(echo_with_color "bundle exec rubocop -D -E") or use $(echo_with_color "git commit --no-verify")." >&2
+    exit 1
+  fi
+fi

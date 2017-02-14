@@ -1,0 +1,43 @@
+#!/bin/sh
+
+set -e
+# set -x
+
+SRC=$(dirname "$0")
+DEST="`pwd`/.git/hooks"
+
+if [[ ! -w "${DEST}" ]]; then
+  echo "You are not in a git repository or ${DEST} is not writable."
+  exit 1
+fi
+
+function install_file() {
+  file=$1
+  cp -ai "${SRC}/${file}" "${DEST}/${file}"
+  chmod +x "${DEST}/${file}"
+  echo "${file} installed."
+}
+
+function uninstall_file() {
+  file=$1
+  if [[ -f "${DEST}/${file}" ]]; then
+    rm -f "${DEST}/${file}"
+    echo "${file} uninstalled."
+  fi
+}
+
+
+HOOK="pre-commit"
+SCRIPTS=(pre_commit_no_commit_on_master pre_commit_rubocop)
+
+install_file "${HOOK}"
+for file in "${SCRIPTS[@]}"; do
+  while true; do
+    read -p "Do you want to install \"${file}\" hook ? " yn
+    case $yn in
+        [Yy]* ) install_file "${file}"; break;;
+        [Nn]* ) uninstall_file "${file}"; break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+  done
+done
