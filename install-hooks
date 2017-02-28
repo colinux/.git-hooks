@@ -26,18 +26,36 @@ function uninstall_file() {
   fi
 }
 
+INSTALL_ALL=false
+while getopts "a" _OPTION; do
+  # long option only
+  case ${_OPTION} in
+
+    a) INSTALL_ALL=true
+    ;;
+
+    *) echo "Usage: $0 [-a]" >&2
+      exit 1
+    ;;
+  esac
+done
+shift $((${OPTIND} - 1))
 
 HOOK="pre-commit"
 SCRIPTS=(pre_commit_no_commit_on_master pre_commit_rubocop)
 
 install_file "${HOOK}"
 for file in "${SCRIPTS[@]}"; do
-  while true; do
-    read -p "Do you want to install \"${file}\" hook ? " yn
-    case $yn in
-        [Yy]* ) install_file "${file}"; break;;
-        [Nn]* ) uninstall_file "${file}"; break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-  done
+  if [ $INSTALL_ALL = true ]; then
+    install_file "${file}";
+  else
+    while true; do
+      read -p "Do you want to install \"${file}\" hook ? " yn
+      case $yn in
+          [Yy]* ) install_file "${file}"; break;;
+          [Nn]* ) uninstall_file "${file}"; break;;
+          * ) echo "Please answer yes or no.";;
+      esac
+    done
+  fi
 done

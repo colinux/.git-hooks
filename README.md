@@ -25,9 +25,12 @@ To install the hooks in a repository, run `install-hooks` from this repository :
 ```
 cd /path/to/git/repository
 ~/.git-hooks/install-hooks
+
+# OR if you want install all hooks:
+~/.git-hooks/install-hooks -a
 ```
 
-You'll be prompted for each hook to install it or not. They are installed in `repository/.git/hooks/` directory.
+You'll be prompted for each hook to install it or not, unless you ran the script with the -a option. They are installed in `repository/.git/hooks/` directory.
 
 
 ## Pre-commit hooks
