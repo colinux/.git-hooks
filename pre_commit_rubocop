@@ -3,7 +3,7 @@
 # set -x
 
 function modified_ruby_files() {
-  echo git status --porcelain |grep -E "^\s+(A|M|AM)\s+.*\.rb$"|cut -c 4-9999
+  echo git status --porcelain |grep -E "^(A|M|AM)\s+.*\.rb$"|cut -c 4-9999
 }
 
 COLOR='\033[0;33m'
