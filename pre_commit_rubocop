@@ -2,24 +2,55 @@
 
 # set -x
 
+VERBOSE=0
+AUTOCORRECT=""
+
+while getopts "va" _OPTION; do
+  # long option only
+  case ${_OPTION} in
+
+    a)
+      AUTOCORRECT="-a"
+      VERBOSE=1
+    ;;
+
+    v) VERBOSE=1
+    ;;
+
+    *) echo "Usage: $0 [-v] [-a]" >&2
+      exit 1
+    ;;
+  esac
+done
+shift $((${OPTIND} - 1))
+
+
 function modified_ruby_files() {
-  echo git status --porcelain |grep -E "^(A|M|AM)\s+.*\.rb$"|cut -c 4-9999
-}
-
-COLOR='\033[0;33m'
-NC='\033[0m' # No Color
-function echo_with_color() {
-  msg=$1
-
-  printf "${COLOR}${msg}${NC}"
+  git status --porcelain |grep -E "^(A|M|AM)\s+(.*\.rb|Guardfile)$"|cut -c 4-9999
 }
 
 if [[ -f ".rubocop.yml" ]]
 then
-  bundle exec rubocop -F --no-color -c .rubocop.yml $(modified_ruby_files) >/dev/null
+  FILES=$(modified_ruby_files)
+
+  if [ -z "$FILES" ]; then
+    if [[ $VERBOSE -eq 1 ]]; then
+      echo "Au moins un fichier fichier ruby doit être dans la staging area."
+    fi
+
+    exit 0
+  fi
+
+  CMD="bundle exec rubocop -F --no-color -c .rubocop.yml $AUTOCORRECT ${FILES}"
+
+  if [[ $VERBOSE -eq 1 ]]; then
+    $CMD
+  else
+    $($CMD >/dev/null)
+  fi
 
   if [[ $? -ne 0 ]]; then
-    echo "Rubocop found offenses. Fix them with $(echo_with_color "bundle exec rubocop -D -E") or use $(echo_with_color "git commit --no-verify")." >&2
+    echo "Rubocop found offenses. Fix them with \"bundle exec rubocop -D -E\" or use \"git commit --no-verify\".">&2
     exit 1
   fi
 fi
