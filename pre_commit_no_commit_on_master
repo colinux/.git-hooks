@@ -1,7 +1,47 @@
-#!/bin/sh
+#!/bin/bash
+# Stops accidental commits to master and develop. https://gist.github.com/stefansundin/9059706
+# Install:
+# cd path/to/git/repo
+# curl -fL -o .git/hooks/pre-commit https://gist.githubusercontent.com/stefansundin/9059706/raw/pre-commit-3
+# chmod +x .git/hooks/pre-commit
 
-if [[ `git symbolic-ref HEAD` == "refs/heads/master" ]]
-then
-  echo "You cannot commit in master!" >&2
-  exit 1
+BRANCH=`git rev-parse --abbrev-ref HEAD`
+
+if [[ "$BRANCH" == "master" || "$BRANCH" == "develop" ]]; then
+	echo "You are on branch $BRANCH. Are you sure you want to commit to this branch?"
+	echo "If so, commit with -n to bypass this pre-commit hook."
+	exit 1
 fi
+
+if [ "`git diff --check --cached | wc -c`" -gt 0 ]; then
+	echo "Your spaces don't agree with your core.whitespace rules."
+	echo 'Please run `git diff --check HEAD` to see your errors.'
+	echo "You can commit with -n to bypass this pre-commit hook."
+	exit 2
+fi
+
+
+NOEOF=()
+FILES=`git status --porcelain | grep "^M" | cut -b4-`
+
+while read -r f; do
+	if [ "`tail -c 1 $f`" != "" ]; then
+		NOEOF+=("$f")
+	fi
+done <<< "$FILES"
+
+if [ ${#NOEOF[@]} -gt 0 ]; then
+	echo "No newlines at the end of these files:"
+	for f in "${NOEOF[@]}"; do
+		echo "  $f"
+	done
+	echo
+	echo "To check your whole repository, run this:"
+	echo
+	echo '    git ls-tree -r -z --name-only HEAD | xargs -0 file | grep text | cut -d: -f1 | xargs -I {} bash -c '\''if [ -n "`tail -c 1 "{}"`" ]; then echo {}; fi'\'''
+	echo
+	echo "You can commit with -n to bypass this pre-commit hook."
+	exit 3
+fi
+
+exit 0
